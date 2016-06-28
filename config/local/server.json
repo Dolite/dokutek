@@ -1,0 +1,13 @@
+{
+    "server":{
+        "port":2016
+    },
+    "db":{
+        "host":"localhost",
+        "port":"27017",
+        "database":"dokutek"
+    },
+    "files":{
+        "directory":"./documents/"
+    }
+}

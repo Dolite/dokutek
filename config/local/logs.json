@@ -1,0 +1,25 @@
+{
+    "appenders": [
+        {
+            "type": "file",
+            "filename": "logs/stdout.log",
+            "maxLogSize": 204800,
+            "backups": 3,
+            "layout": {
+                "type": "pattern",
+                "pattern": "[%d] (%z) [%[%5.5p%]] - %m"
+            },
+            "category":"logger"
+        },
+        {
+            "type": "console",
+            "layout": {
+                "type": "pattern",
+                "pattern": "[%d] (%z) [%[%5.5p%]] - %m"
+            }
+        }
+    ],
+    "levels": {
+        "[all]": "DEBUG"
+    }
+}

@@ -1,0 +1,26 @@
+{
+  "name": "dokutek",
+  "version": "1.0.0",
+  "description": "Gestion de documents",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "assert": "^1.4.1",
+    "body-parser": "^1.15.2",
+    "bson": "^0.4.23",
+    "express": "^4.14.0",
+    "express-fileupload": "0.0.5",
+    "log4js": "^0.6.37",
+    "mime-types": "^2.1.11",
+    "minimist": "^1.2.0",
+    "mkdirp": "^0.5.1",
+    "mongodb": "^2.1.18",
+    "multer": "^1.1.0",
+    "node-schedule": "^1.1.1"
+  },
+  "author": "Théo Satabin",
+  "license": "ISC"
+}
