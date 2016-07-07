@@ -9,8 +9,22 @@ var Exceptions = require('../models/exceptions');
 
 router.use(
     function(req, res, next) {
+
         logger.info(req.method, req.url);
-        next();
+                
+        try {
+        	next();
+    	} catch (e) {
+            if (e instanceof Exceptions.BadRequestException) {
+                res.status(400).json(e);
+            } else if (e instanceof Exceptions.NotFoundException) {
+                res.status(404).json(e);
+            } else if (e instanceof Exceptions.ConflictException) {
+                res.status(409).json(e);
+            } else {
+                res.status(500).json(e);
+            }
+        }
     }
 )
 

@@ -10,7 +10,7 @@
                 "pattern": "[%d] (%z) [%[%5.5p%]] - %m"
             },
             "category":"logger"
-        },
+        },        
         {
             "type": "console",
             "layout": {

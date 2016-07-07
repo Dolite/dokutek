@@ -11,129 +11,34 @@ var DocumentServices = require('../services/document');
 
 router.route('/')
     .post(function(req, res) {
-        try {
-            DocumentServices.create(req, res);
-        } catch (e) {
-            if (e instanceof Exceptions.BadRequestException) {
-                res.status(400).json(e);
-            } else if (e instanceof Exceptions.NotFoundException) {
-                res.status(404).json(e);
-            } else if (e instanceof Exceptions.ConflictException) {
-                res.status(409).json(e);
-            } else {
-                res.status(500).json(e);
-            }
-        }
+        DocumentServices.create(req, res);
     })
     .get(function(req, res) {
-        try {
-            DocumentServices.gets(req, res);
-        } catch (e) {
-            if (e instanceof Exceptions.BadRequestException) {
-                res.status(400).json(e);
-            } else if (e instanceof Exceptions.NotFoundException) {
-                res.status(404).json(e);
-            } else if (e instanceof Exceptions.ConflictException) {
-                res.status(409).json(e);
-            } else {
-                res.status(500).json(e);
-            }
-        }
+        DocumentServices.gets(req, res);
+
     });
 
 router.route('/:id')
     .get(function(req, res) {
-        try {
-            DocumentServices.get(req, res);
-        } catch (e) {
-            if (e instanceof Exceptions.BadRequestException) {
-                res.status(400).json(e);
-            } else if (e instanceof Exceptions.NotFoundException) {
-                res.status(404).json(e);
-            } else if (e instanceof Exceptions.ConflictException) {
-                res.status(409).json(e);
-            } else {
-                res.status(500).json(e);
-            }
-        }
+        DocumentServices.get(req, res);
     })
     .put(function(req, res) {
-        try {
-            DocumentServices.update(req, res);
-        } catch (e) {
-            if (e instanceof Exceptions.BadRequestException) {
-                res.status(400).json(e);
-            } else if (e instanceof Exceptions.NotFoundException) {
-                res.status(404).json(e);
-            } else if (e instanceof Exceptions.ConflictException) {
-                res.status(409).json(e);
-            } else {
-                res.status(500).json(e);
-            }
-        }
+        DocumentServices.update(req, res);
     })
     .delete(function(req, res) {
-        try {
-            DocumentServices.delete(req, res);
-        } catch (e) {
-            if (e instanceof Exceptions.BadRequestException) {
-                res.status(400).json(e);
-            } else if (e instanceof Exceptions.NotFoundException) {
-                res.status(404).json(e);
-            } else if (e instanceof Exceptions.ConflictException) {
-                res.status(409).json(e);
-            } else {
-                res.status(500).json(e);
-            }
-        }
+        DocumentServices.delete(req, res);
+
     });
 
 router.route('/:id/file')
     .get(function(req, res) {
-        try {
-            DocumentServices.getFile(req, res);
-        } catch (e) {
-            if (e instanceof Exceptions.BadRequestException) {
-                res.status(400).json(e);
-            } else if (e instanceof Exceptions.NotFoundException) {
-                res.status(404).json(e);
-            } else if (e instanceof Exceptions.ConflictException) {
-                res.status(409).json(e);
-            } else {
-                res.status(500).json(e);
-            }
-        }
+        DocumentServices.getFile(req, res);
     })
     .post(function(req, res) {
-        try {
-            DocumentServices.addFile(req, res);
-            Logger.debug("là");
-        } catch (e) {
-            if (e instanceof Exceptions.BadRequestException) {
-                res.status(400).json(e);
-            } else if (e instanceof Exceptions.NotFoundException) {
-                res.status(404).json(e);
-            } else if (e instanceof Exceptions.ConflictException) {
-                res.status(409).json(e);
-            } else {
-                res.status(500).json(e);
-            }
-        }
+        DocumentServices.addFile(req, res);
     })
     .delete(function(req, res) {
-        try {
-            DocumentServices.deleteFile(req, res);
-        } catch (e) {
-            if (e instanceof Exceptions.BadRequestException) {
-                res.status(400).json(e);
-            } else if (e instanceof Exceptions.NotFoundException) {
-                res.status(404).json(e);
-            } else if (e instanceof Exceptions.ConflictException) {
-                res.status(409).json(e);
-            } else {
-                res.status(500).json(e);
-            }
-        }
+        DocumentServices.deleteFile(req, res);
     });
 
 module.exports = router;

@@ -1,13 +1,13 @@
 {
     "server":{
-        "port":2016
+        "port":2016,
+        "directory":"../dokutek-documents/",
+        "keywords":"./config/local/keywords.fr.json",
+        "fields":"./config/local/fields.fr.json"
     },
     "db":{
         "host":"localhost",
         "port":"27017",
         "database":"dokutek"
-    },
-    "files":{
-        "directory":"./documents/"
     }
 }

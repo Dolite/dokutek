@@ -8,14 +8,32 @@ var path = require('path');
 var logger = require('log4js').getLogger("logger");
 
 var port;
-var documentsDirectory;
-
 module.exports.getPort = function () {
     return port;
 };
 
-module.exports.getDirectory = function () {
-    return documentsDirectory;
+var documentsDirectory;
+
+var keywordsFile;
+var keywordsObj;
+
+
+var keywordsFile;
+var keywordsObj;
+module.exports.getKeywords = function () {
+    return keywordsObj;
+};
+module.exports.notAKeyword = function (k) {
+    return ! keywordsObj.hasOwnProperty(k);
+};
+
+var fieldsFile;
+var fieldsObj;
+module.exports.getFields = function () {
+    return fieldsObj;
+};
+module.exports.notAField = function (f) {
+    return ! fieldsObj.hasOwnProperty(f);
 };
 
 function load (file, callback) {
@@ -53,18 +71,70 @@ function load (file, callback) {
 
     // Le répertoire de stockage des documents (fichiers)
 
-    if (config.files.directory === undefined) {
-        logger.fatal("Directory to store documents have to be provided in the configuration file (files / directory) : " + file);
+    if (config.server.directory === undefined) {
+        logger.fatal("Directory to store documents have to be provided in the configuration file (server / directory) : " + file);
         callback(1);
         return;
     }
 
-    documentsDirectory = path.resolve(process.cwd(), config.files.directory);
+    documentsDirectory = path.resolve(process.cwd(), config.server.directory);
 
     try {
         fs.statSync(documentsDirectory);
-    } catch (e1) {
+    } catch (e3) {
         logger.fatal("Documents' directory does not exist : " + documentsDirectory);
+        callback(1);
+        return;
+    }
+
+    // Le fichier des mots clé
+
+    if (config.server.keywords === undefined) {
+        logger.fatal("Keywords file have to be provided in the configuration file (server / keywords) : " + file);
+        callback(1);
+        return;
+    }
+
+    keywordsFile = path.resolve(process.cwd(), config.server.keywords);
+
+    try {
+        fs.statSync(keywordsFile);
+    } catch (e4) {
+        logger.fatal("Keywords' file does not exist : " + keywordsFile);
+        callback(1);
+        return;
+    }
+
+    try{
+        keywordsObj = JSON.parse(fs.readFileSync(keywordsFile, 'utf8'));
+    } catch (e5) {
+        logger.fatal("Keywords file is not a valid JSON file : " + keywordsFile);
+        callback(1);
+        return;
+    }
+
+    // Le fichier des champs
+
+    if (config.server.fields === undefined) {
+        logger.fatal("Fields file have to be provided in the configuration file (server / fields) : " + file);
+        callback(1);
+        return;
+    }
+
+    fieldsFile = path.resolve(process.cwd(), config.server.fields);
+
+    try {
+        fs.statSync(fieldsFile);
+    } catch (e6) {
+        logger.fatal("Fields' file does not exist : " + fieldsFile);
+        callback(1);
+        return;
+    }
+
+    try{
+        fieldsObj = JSON.parse(fs.readFileSync(fieldsFile, 'utf8'));
+    } catch (e7) {
+        logger.fatal("Fields file is not a valid JSON file : " + fieldsFile);
         callback(1);
         return;
     }

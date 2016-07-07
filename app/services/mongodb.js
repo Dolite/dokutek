@@ -103,7 +103,6 @@ module.exports.findOne = function (colName, id, callback) {
 
     mongodbClient.collection(colName).findOne(
         {'_id': bsonID},
-
         function(err, item) {
             if (err) {
                 console.error(err);
@@ -122,7 +121,7 @@ module.exports.findSeveral = function (colName, max, callback) {
         return;
     }
 
-    mongodbClient.collection(colName).find().toArray(
+    mongodbClient.collection(colName).find({},{'name': true, 'keywords':true}).toArray(
         function(err, items) {
             if (err) {
                 logger.error(err);
@@ -141,11 +140,6 @@ module.exports.insertOne = function (colName, object, callback) {
         callback("No connection to mongodb", null);
         return;
     }
-
-    /* La clé _id est protégée, elle st générée automatiquement par mongodb */
-
-    object._id = null;
-    delete object._id;
 
     mongodbClient.collection(colName).insertOne(
         object,
@@ -174,11 +168,6 @@ module.exports.updateOne = function (colName, id, newObject, callback) {
     } catch (e) {
         throw new Exceptions.BadRequestException("ID is not a valid ObjectID");
     }
-
-    /* La clé _id est protégée, elle st générée automatiquement par mongodb */
-
-    newObject._id = null;
-    delete newObject._id;
 
     mongodbClient.collection(colName).replaceOne(
         {'_id': bsonID},

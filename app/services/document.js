@@ -13,6 +13,48 @@ var Multer = require('multer');
 
 var collectionName = "documents";
 
+/************************************** UTILITAIRES **************************************/
+
+var deleteSpecialFields = function (obj) {
+
+    obj._file = null;
+    delete obj._file;
+    obj._filetype = null;
+    delete obj._filetype;
+    
+    obj._id = null;
+    delete obj._id;
+    
+    obj._timestamp = null;
+    delete obj._timestamp;
+
+    return obj;
+}
+
+var checkDocumentObject = function (obj) {
+
+    // Les champs possibles sont contraints
+    var fields = Object.getOwnPropertyNames(obj);
+
+    var wrongFields = fields.filter(ConfigurationServices.notAField);
+    if (wrongFields.length != 0) {
+        return "Wrong attributes: " + wrongFields.join(",");
+    }
+
+    // Les mots clés possibles sont contraints
+    if (obj.hasOwnProperty("keywords")) {
+        if (! Array.isArray(obj.keywords)) {
+            return "'keywords' have to be a string array";
+        }
+        var wrongKeywords = obj.keywords.filter(ConfigurationServices.notAKeyword);
+        if (wrongKeywords.length != 0) {
+            return "Wrong keywords: " + wrongKeywords.join(",");
+        }
+    }
+
+    return null;
+}
+
 /************************************** GESTION DES OBJETS **************************************/
 
 module.exports.get = function (req, res) {
@@ -46,11 +88,13 @@ module.exports.gets = function (req, res) {
 
 module.exports.create = function (req, res) {
 
-    var object = req.body;
+    var object = deleteSpecialFields(req.body);
 
-    /* La clé _file est interdite, l'upload du fichier se fait de manière séparée */
-    object._file = null;
-    delete object._file;
+    var paramErr = checkDocumentObject(object);
+    if (paramErr != null) {
+        res.status(400).json(new Exceptions.BadRequestException(paramErr));
+        return;
+    }
 
     /* Le datage de l'objet est ajouté */
     object._timestamp = Date.now();
@@ -72,10 +116,13 @@ module.exports.create = function (req, res) {
 
 module.exports.update = function (req, res) {
 
-    var newObject = req.body;
-    /* La clé _file est interdite, l'upload du fichier se fait de manière séparée */
-    newObject._file = null;
-    delete newObject._file;
+    var newObject = deleteSpecialFields(req.body);
+
+    var paramErr = checkDocumentObject(newObject);
+    if (paramErr != null) {
+        res.status(400).json(new Exceptions.BadRequestException(paramErr));
+        return;
+    }
 
     /* Le datage de l'objet est ajouté */
     newObject._timestamp = Date.now();
@@ -94,6 +141,7 @@ module.exports.update = function (req, res) {
 
                 if (oldObject.hasOwnProperty("_file")) {
                     newObject._file = oldObject._file;
+                    newObject._filetype = oldObject._filetype;
                 }
 
                 MongodbServices.updateOne(
