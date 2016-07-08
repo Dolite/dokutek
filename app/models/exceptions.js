@@ -21,3 +21,4 @@ module.exports.InternalServerErrorException = function InternalServerErrorExcept
     this.message = message;
     this.code = 500;
 };
+

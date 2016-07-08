@@ -11,6 +11,11 @@ router.use(
     function(req, res, next) {
 
         logger.info(req.method, req.url);
+
+        // Case insensitive for request query
+        for (var key in req.query) { 
+            req.query[key.toLowerCase()] = req.query[key];
+        }
                 
         try {
         	next();

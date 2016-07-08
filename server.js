@@ -2,13 +2,15 @@
     exports, global, module, process, require, console
 */
 
-var express = require('express');
 var bodyParser = require('body-parser');
 var routing = require('./app/routes/index');
 var configurationService = require('./app/services/configuration');
 var parseArgs = require('minimist');
+var express = require('express');
 var MongodbServices = require('./app/services/mongodb');
 var log4js = require('log4js');
+var fs = require('fs');
+var https = require('https');
 
 
 /**************** Chargement de la configuration, de manière synchrone ************************/
@@ -74,6 +76,7 @@ process.on('SIGHUP', reload);
 var port = config.server.port;
 
 var app = express();
+
 app.use(bodyParser.urlencoded({
     extended: true,
     parameterLimit: 10000,
@@ -84,16 +87,26 @@ app.use(bodyParser.json({
     limit: '5mb'
 }));
 
-// Case insensitive for request query
-app.use(function(req, res, next) {
-    for (var key in req.query) { 
-        req.query[key.toLowerCase()] = req.query[key];
-    }
-    next();
-});
-
 app.use('/', routing);
 
 app.on('close',clean);
 
-app.listen(port);
+/***************************** Configuration HTTPS *****************************/
+
+var options = {};
+
+try {
+    var hskey = fs.readFileSync('https-files/dokutek-key.pem');
+    options.key = hskey;
+    var hscert = fs.readFileSync('https-files/dokutek-cert.pem');
+    options.cert = hscert;
+}
+catch(e) {
+    logger.error("Erreur lors du chargement des configurations HTTPS");
+    logger.error(e.message);
+    process.exit(1);
+}
+
+var serverHttps = https.createServer(options, app);
+serverHttps.listen(port);
+
