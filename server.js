@@ -11,6 +11,7 @@ var MongodbServices = require('./app/services/mongodb');
 var log4js = require('log4js');
 var fs = require('fs');
 var https = require('https');
+var Exceptions = require('./app/models/exceptions');
 
 
 /**************** Chargement de la configuration, de manière synchrone ************************/
@@ -86,6 +87,9 @@ app.use(bodyParser.json({
     parameterLimit: 10000,
     limit: '5mb'
 }));
+app.use (function (error, req, res, next){
+    res.status(400).json(new Exceptions.BadRequestException("Unvalid JSON body"));
+});
 
 app.use('/', routing);
 

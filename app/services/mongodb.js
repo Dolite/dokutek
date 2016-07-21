@@ -121,7 +121,7 @@ module.exports.findSeveral = function (colName, max, callback) {
         return;
     }
 
-    mongodbClient.collection(colName).find({},{'name': true, 'keywords':true}).toArray(
+    mongodbClient.collection(colName).find({},{'_timestamp': true, 'name': true}).toArray(
         function(err, items) {
             if (err) {
                 logger.error(err);

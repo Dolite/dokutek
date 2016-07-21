@@ -15,7 +15,6 @@ router.route('/')
     })
     .get(function(req, res) {
         DocumentServices.gets(req, res);
-
     });
 
 router.route('/:id')
@@ -27,7 +26,6 @@ router.route('/:id')
     })
     .delete(function(req, res) {
         DocumentServices.delete(req, res);
-
     });
 
 router.route('/:id/file')

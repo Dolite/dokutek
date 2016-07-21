@@ -52,6 +52,11 @@ var checkDocumentObject = function (obj) {
         }
     }
 
+    // On veut forcément un name
+    if (! obj.hasOwnProperty("name")) {
+        return "Missing 'name' attribute";
+    }   
+
     return null;
 }
 
@@ -80,6 +85,13 @@ module.exports.gets = function (req, res) {
             if (err) {
                 res.status(500).json(new Exceptions.InternalServerErrorException(err));
             } else {
+
+                // Conversion des timestamp en date lisible
+                
+                items.forEach(function (element, index, array) {
+                    element._timestamp = new Date(element._timestamp);
+                });
+
                 res.status(200).json(items);
             }
         }
@@ -323,11 +335,7 @@ module.exports.deleteFile = function (req, res) {
                 var filePath = doc._file;
 
                 var err = MongodbServices.deleteOneKey(collectionName, req.params.id, "_file");
-
-                if (err) {
-                    res.status(500).json(new Exceptions.InternalServerErrorException(err));
-                    return;
-                }
+                err = MongodbServices.deleteOneKey(collectionName, req.params.id, "_filetype");
 
                 try {
                     Fs.unlinkSync(filePath);
