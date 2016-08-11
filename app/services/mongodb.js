@@ -121,13 +121,34 @@ module.exports.findSeveral = function (colName, max, callback) {
         return;
     }
 
-    mongodbClient.collection(colName).find({},{'_timestamp': true, 'name': true}).toArray(
+    mongodbClient.collection(colName).find({},{'_timestamp': true, 'name': true, '_filetype': true}).toArray(
         function(err, items) {
             if (err) {
                 logger.error(err);
                 callback("Problem with mongodb connection: cannot get objects", null);
             } else {
                 callback(null, items);
+            }
+        }
+    );
+};
+
+
+module.exports.distinct = function (colName, field, callback) {
+
+    if (! connected) {
+        callback("No connection to mongodb", null);
+        return;
+    }
+
+    mongodbClient.collection(colName).distinct(
+        field,
+        function(err, list) {
+            if (err) {
+                console.error(err);
+                callback("Problem with mongodb connection: cannot get distinct values", null);
+            } else {
+                callback(null, list);
             }
         }
     );
@@ -260,3 +281,7 @@ module.exports.deleteOne = function (colName, id, callback) {
     );
 };
 
+
+/*************************************************************************************************/
+
+// FONCTIONS D'ACCÈS À LA BASE DE DONNÉES

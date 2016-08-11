@@ -95,10 +95,11 @@ app.use('/', routing);
 
 app.on('close',clean);
 
-/***************************** Configuration HTTPS *****************************/
+
+/*
+//**************************** Configuration HTTPS *****************************
 
 var options = {};
-
 try {
     var hskey = fs.readFileSync('https-files/dokutek-key.pem');
     options.key = hskey;
@@ -113,4 +114,9 @@ catch(e) {
 
 var serverHttps = https.createServer(options, app);
 serverHttps.listen(port);
+*/
+
+//**************************** Configuration HTTP *****************************
+
+app.listen(port);
 

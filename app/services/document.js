@@ -78,6 +78,31 @@ module.exports.get = function (req, res) {
     );
 }
 
+
+module.exports.getDistinct = function (req, res) {
+
+    if (ConfigurationServices.notAField(req.params.field)) {
+        res.status(400).json(new Exceptions.BadRequestException("Provided field for distinct values is not valid"));
+        return;
+    }
+
+    if (req.params.field === "keywords") {
+        res.status(400).json(new Exceptions.BadRequestException("Cannot get distinct values for keywords"));
+        return;
+    }
+
+    MongodbServices.distinct(
+        collectionName, req.params.field,
+        function(err,list) {
+            if (err) {
+                res.status(500).json(new Exceptions.InternalServerErrorException(err));
+            } else {
+                res.status(200).json(list);
+            }
+        }
+    );
+}
+
 module.exports.gets = function (req, res) {
     MongodbServices.findSeveral(
         collectionName, 10,
@@ -190,18 +215,8 @@ module.exports.delete = function (req, res) {
 var calculateFilePath = function (object) {
     var docDir = ConfigurationServices.getDirectory();
     var filePath = docDir;
-    if(object.hasOwnProperty("category") && object.category !== null && object.category !== "") {
-        filePath = Path.join(filePath, object.category);
-    } else {
-        filePath = Path.join(filePath, "none");
-    }
 
-    if(object.hasOwnProperty("subcategory") && object.subcategory !== null && object.subcategory !== "") {
-        filePath = Path.join(filePath, object.subcategory);
-    } else {
-        filePath = Path.join(filePath, "none");
-    }
-
+    filePath = Path.join(filePath, object._id.toString().substring(0, 2));
     filePath = Path.join(filePath, object._id.toString());
 
     return filePath;

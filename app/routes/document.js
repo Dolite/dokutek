@@ -17,6 +17,11 @@ router.route('/')
         DocumentServices.gets(req, res);
     });
 
+router.route('/distinct/:field')
+    .get(function(req, res) {
+        DocumentServices.getDistinct(req, res);
+    });
+
 router.route('/:id')
     .get(function(req, res) {
         DocumentServices.get(req, res);
