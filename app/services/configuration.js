@@ -13,10 +13,9 @@ module.exports.getPort = function () {
 };
 
 var documentsDirectory;
-
-var keywordsFile;
-var keywordsObj;
-
+module.exports.getDirectory = function () {
+    return documentsDirectory;
+};
 
 var keywordsFile;
 var keywordsObj;

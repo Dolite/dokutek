@@ -7,9 +7,8 @@ var ConfigurationServices = require('./configuration');
 var Exceptions = require('../models/exceptions');
 var Path = require('path');
 var Fs = require('fs');
-var Mkdirp = require("mkdirp")
 var Logger = require('log4js').getLogger("logger");
-var Multer = require('multer');
+
 
 var collectionName = "documents";
 
@@ -62,74 +61,37 @@ var checkDocumentObject = function (obj) {
 
 /************************************** GESTION DES OBJETS **************************************/
 
-module.exports.get = function (req, res) {
-    MongodbServices.findOne(
-        collectionName, req.params.id,
-        function(err,item) {
-            if (err) {
-                res.status(500).json(new Exceptions.InternalServerErrorException(err));
-            }
-            else if (item === null) {
-                res.status(404).json(new Exceptions.NotFoundException("No document with id "+req.params.id));
-            } else {
-                res.status(200).json(item);
-            }
-        }
-    );
+module.exports.get = function (id, callback) {
+    MongodbServices.findOne(collectionName, id, callback);
 }
 
 
-module.exports.getDistinct = function (req, res) {
+module.exports.getDistinct = function (field, callback) {
 
-    if (ConfigurationServices.notAField(req.params.field)) {
-        res.status(400).json(new Exceptions.BadRequestException("Provided field for distinct values is not valid"));
+    if (ConfigurationServices.notAField(field)) {
+        callback(new Exceptions.BadRequestException("Provided field for distinct values is not valid"), null);
         return;
     }
 
-    if (req.params.field === "keywords") {
-        res.status(400).json(new Exceptions.BadRequestException("Cannot get distinct values for keywords"));
+    if (field === "keywords") {
+        callback(new Exceptions.BadRequestException("Cannot get distinct values for keywords"), null);
         return;
     }
 
-    MongodbServices.distinct(
-        collectionName, req.params.field,
-        function(err,list) {
-            if (err) {
-                res.status(500).json(new Exceptions.InternalServerErrorException(err));
-            } else {
-                res.status(200).json(list);
-            }
-        }
-    );
+    MongodbServices.distinct( collectionName, field, callback );
 }
 
-module.exports.gets = function (req, res) {
-    MongodbServices.findSeveral(
-        collectionName, 10,
-        function(err,items) {
-            if (err) {
-                res.status(500).json(new Exceptions.InternalServerErrorException(err));
-            } else {
-
-                // Conversion des timestamp en date lisible
-                
-                items.forEach(function (element, index, array) {
-                    element._timestamp = new Date(element._timestamp);
-                });
-
-                res.status(200).json(items);
-            }
-        }
-    );
+module.exports.gets = function (callback) {
+    MongodbServices.findSeveral( collectionName, 10, callback );
 }
 
-module.exports.create = function (req, res) {
+module.exports.create = function (rawObj, callback) {
 
-    var object = deleteSpecialFields(req.body);
+    var object = deleteSpecialFields(rawObj);
 
     var paramErr = checkDocumentObject(object);
     if (paramErr != null) {
-        res.status(400).json(new Exceptions.BadRequestException(paramErr));
+        callback(new Exceptions.BadRequestException(paramErr), null);
         return;
     }
 
@@ -137,27 +99,17 @@ module.exports.create = function (req, res) {
     object._timestamp = Date.now();
 
     MongodbServices.insertOne(
-        collectionName, object,
-        function(err,item) {
-            if (err) {
-                res.status(500).json(new Exceptions.InternalServerErrorException(err));
-            }
-            else if (item === null) {
-                res.status(404).json(new Exceptions.NotFoundException("No document with id "+req.params.id));
-            } else {
-                res.status(200).json(item);
-            }
-        }
+        collectionName, object, callback
     );
 }
 
-module.exports.update = function (req, res) {
+module.exports.update = function (id, rawObj, callback) {
 
-    var newObject = deleteSpecialFields(req.body);
+    var newObject = deleteSpecialFields(rawObj);
 
     var paramErr = checkDocumentObject(newObject);
     if (paramErr != null) {
-        res.status(400).json(new Exceptions.BadRequestException(paramErr));
+        callback(new Exceptions.BadRequestException(paramErr), null);
         return;
     }
 
@@ -167,13 +119,13 @@ module.exports.update = function (req, res) {
     // On commence par récupérer le document que l'on veut modifier
 
     MongodbServices.findOne(
-        collectionName, req.params.id,
-        function(err, oldObject) {
-            if (err) {
-                res.status(500).json(new Exceptions.InternalServerErrorException(err));
+        collectionName, id,
+        function(exception, oldObject) {
+            if (exception) {
+                callback(exception, null);
             }
             else if (oldObject === null) {
-                res.status(404).json(new Exceptions.NotFoundException("No document with id "+req.params.id));
+                callback(new Exceptions.NotFoundException("No document with id "+id), null);
             } else {
 
                 if (oldObject.hasOwnProperty("_file")) {
@@ -181,38 +133,19 @@ module.exports.update = function (req, res) {
                     newObject._filetype = oldObject._filetype;
                 }
 
-                MongodbServices.updateOne(
-                    collectionName, req.params.id, newObject,
-                    function(err,result) {
-                        if (err) {
-                            res.status(500).json(new Exceptions.InternalServerErrorException(err));
-                        } else {
-                            res.status(200).json(newObject);
-                        }
-                    }
-                );
+                MongodbServices.updateOne( collectionName, id, newObject, callback );
             }
         }
     );
 }
 
-module.exports.delete = function (req, res) {
-
-    MongodbServices.deleteOne(
-        collectionName, req.params.id,
-        function(err,result) {
-            if (err) {
-                res.status(500).json(new Exceptions.InternalServerErrorException(err));
-            } else {
-                res.status(204).send();
-            }
-        }
-    );
+module.exports.delete = function (id, callback) {
+    MongodbServices.deleteOne(collectionName, id, callback);
 }
 
 /************************************** GESTION DES FICHIERS **************************************/
 
-var calculateFilePath = function (object) {
+module.exports.calculateFilePath = function (object) {
     var docDir = ConfigurationServices.getDirectory();
     var filePath = docDir;
 
@@ -222,146 +155,65 @@ var calculateFilePath = function (object) {
     return filePath;
 }
 
-module.exports.getFile = function (req, res) {
+module.exports.getFileInfos = function (id, callback) {
 
     MongodbServices.findOne(
-        collectionName, req.params.id,
-        function(err,doc) {
-            if (err) {
-                res.status(500).json(new Exceptions.InternalServerErrorException(err));
+        collectionName, id,
+        function(exception, obj) {
+            if (exception) {
+                callback(exception, null, null);
             }
-            else if (doc === null) {
-                res.status(404).json(new Exceptions.NotFoundException("No document with id "+req.params.id));
+            else if (obj === null) {
+                callback(new Exceptions.NotFoundException("No document with id "+id), null, null);
             } else {
-                if (! doc.hasOwnProperty("_file")) {
-                    res.status(404).json(new Exceptions.NotFoundException("No file for the document with id "+req.params.id));
+                if (! obj.hasOwnProperty("_file")) {
+                    callback(new Exceptions.NotFoundException("No file for the document with id "+id), null, null);
                     return;
                 }
-                var filePath = doc._file;
 
                 try {
-                    Fs.statSync(filePath);
+                    Fs.statSync(obj._file);
                 } catch (e) {
-                    Logger.error("File for document " + req.params.id + " should be " + filePath + " but this file doesn't exist");
-                    res.status(404).json(new Exceptions.NotFoundException("No file for the document with id "+req.params.id));
+                    Logger.error("File for document " + id + " should be " + obj._file + " but this file doesn't exist");
+                    callback(new Exceptions.NotFoundException("No file for the document with id "+id), null, null);
                     return;
                 }
 
-                res.status(200).contentType(doc._filetype).sendFile(filePath);
+                callback(null, obj._file, obj._filetype);
             }
         }
     );
 }
 
-module.exports.addFile = function (req, res) {
-
-    MongodbServices.findOne( collectionName, req.params.id, function(err,doc) {
-
-        if (err) {
-            res.status(500).json(new Exceptions.InternalServerErrorException(err));
-        } else if (doc === null) {
-            res.status(404).json(new Exceptions.NotFoundException("No document with id "+req.params.id));
-        } else {
-            if (doc.hasOwnProperty("_file")) {
-                res.status(409).json(new Exceptions.ConflictException("Document with id "+req.params.id+" own already a file, delete it before"));
-                return;
-            }
-            var filePath = calculateFilePath(doc);
-            var fileType;
-
-            var err = MongodbServices.updateOneKey(collectionName, req.params.id, "_file", filePath);
-
-            if (err) {
-                res.status(500).json(new Exceptions.InternalServerErrorException(err));
-                return;
-            }
-
-            var storage = Multer.diskStorage({
-                destination: function (req, file, callback) {
-                    Mkdirp( Path.dirname(filePath), function (err) {
-                        if(err) {
-                            callback(err, null);
-                        } else {
-                            callback(null, Path.dirname(filePath));
-                        }
-                    });
-                },
-                filename: function (req, file, callback) {
-                    fileType = file.mimetype;
-                    callback(null, Path.basename(filePath));
-                }
-            });
-
-            var upload = Multer({
-                storage: storage,
-                limits: {
-                    fileSize: 5*1024*1024,
-                    files: 1
-                }
-            }).single("document");
-
-            upload(req, res, function(err) {
-                if(err) {
-                    // L'upload a échoué, on supprime la clé _file dans mongodb
-
-                    MongodbServices.deleteOneKey(collectionName, req.params.id, "_file");
-                    Logger.error(err.code);
-
-                    switch(err.code) {
-                        case "LIMIT_UNEXPECTED_FILE":
-                            res.status(400).json(new Exceptions.InternalServerErrorException(
-                                "Error uploading file: the SINGLE field name is 'document' for the file to upload"
-                            ));
-                            break;
-                        case "LIMIT_FILE_SIZE":
-                            res.status(400).json(new Exceptions.InternalServerErrorException(
-                                "Error uploading file: the max size for the file is 5 Mb"
-                            ));
-                            break;
-                        default:
-                            res.status(500).json(new Exceptions.InternalServerErrorException("Error uploading file: " + err));       
-                    }
-                } else {
-                    var err = MongodbServices.updateOneKey(collectionName, req.params.id, "_filetype", fileType);
-                    res.status(200).json({message:"File is uploaded"});
-                }
-            });
-        }
-
-    });
-}
-
-module.exports.deleteFile = function (req, res) {
+module.exports.deleteFile = function (id, callback) {
 
     MongodbServices.findOne(
-        collectionName, req.params.id,
-        function(err,doc) {
-            if (err) {
-                res.status(500).json(new Exceptions.InternalServerErrorException(err));
+        collectionName, id,
+        function(exception, obj) {
+            if (exception) {
+                callback(exception, null);
             }
-            else if (doc === null) {
-                res.status(404).json(new Exceptions.NotFoundException("No document with id "+req.params.id));
+            else if (obj === null) {
+                callback(new Exceptions.NotFoundException("No document with id "+id), null);
             } else {
-                if (! doc.hasOwnProperty("_file")) {
-                    res.status(409).json(new Exceptions.ConflictException("Document with id "+req.params.id+" doesn't own a file, cannot delete it"));
+                if (! obj.hasOwnProperty("_file")) {
+                    callback(new Exceptions.ConflictException("Document with id "+id+" doesn't own a file, cannot delete it"), null);
                     return;
                 }
 
-                var filePath = doc._file;
+                var filePath = obj._file;
 
-                var err = MongodbServices.deleteOneKey(collectionName, req.params.id, "_file");
-                err = MongodbServices.deleteOneKey(collectionName, req.params.id, "_filetype");
+                MongodbServices.deleteOneKey(collectionName, id, "_file");
+                MongodbServices.deleteOneKey(collectionName, id, "_filetype");
 
                 try {
                     Fs.unlinkSync(filePath);
                 } catch (e) {
                     // Si une erreur survient lors de la suppression, on le logge mais ne ressort pas en erreur
-                    logger.error(e);
-                    res.status(204).send();
-                    return;
+                    Logger.error(e);
                 }
 
-                res.status(204).send();
+                callback(null, null);
             }
         }
     );

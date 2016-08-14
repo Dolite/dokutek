@@ -89,15 +89,16 @@ module.exports.disconnectDB = function () {
 
 module.exports.findOne = function (colName, id, callback) {
 
+    if (! connected) {
+        callback(new Exceptions.InternalServerError("No connection to mongodb"), null);
+        return;
+    }
+
     var bsonID;
     try {
         bsonID = new BSON.ObjectID(id);
     } catch (e) {
-        throw new Exceptions.BadRequestException("ID is not a valid ObjectID");
-    }
-
-    if (! connected) {
-        callback("No connection to mongodb", null);
+        callback(new Exceptions.BadRequestException("ID is not a valid ObjectID"), null);
         return;
     }
 
@@ -105,9 +106,10 @@ module.exports.findOne = function (colName, id, callback) {
         {'_id': bsonID},
         function(err, item) {
             if (err) {
-                console.error(err);
-                callback("Problem with mongodb connection: cannot get an object", null);
+                logger.error(err);
+                callback(new Exceptions.InternalServerError("Problem with mongodb connection: cannot get an object"), null);
             } else {
+                item._timestamp = new Date(item._timestamp);
                 callback(null, item);
             }
         }
@@ -117,7 +119,7 @@ module.exports.findOne = function (colName, id, callback) {
 module.exports.findSeveral = function (colName, max, callback) {
 
     if (! connected) {
-        callback("No connection to mongodb", null);
+        callback(new Exceptions.InternalServerError("No connection to mongodb"), null);
         return;
     }
 
@@ -125,8 +127,11 @@ module.exports.findSeveral = function (colName, max, callback) {
         function(err, items) {
             if (err) {
                 logger.error(err);
-                callback("Problem with mongodb connection: cannot get objects", null);
+                callback(new Exceptions.InternalServerError("Problem with mongodb connection: cannot get objects"), null);
             } else {
+                items.forEach(function (element, index, array) {
+                    element._timestamp = new Date(element._timestamp);
+                });
                 callback(null, items);
             }
         }
@@ -137,7 +142,7 @@ module.exports.findSeveral = function (colName, max, callback) {
 module.exports.distinct = function (colName, field, callback) {
 
     if (! connected) {
-        callback("No connection to mongodb", null);
+        callback(new Exceptions.InternalServerError("No connection to mongodb"), null);
         return;
     }
 
@@ -145,8 +150,8 @@ module.exports.distinct = function (colName, field, callback) {
         field,
         function(err, list) {
             if (err) {
-                console.error(err);
-                callback("Problem with mongodb connection: cannot get distinct values", null);
+                logger.error(err);
+                callback(new Exceptions.InternalServerError("Problem with mongodb connection: cannot get distinct values"), null);
             } else {
                 callback(null, list);
             }
@@ -158,7 +163,7 @@ module.exports.distinct = function (colName, field, callback) {
 module.exports.insertOne = function (colName, object, callback) {
 
     if (! connected) {
-        callback("No connection to mongodb", null);
+        callback(new Exceptions.InternalServerError("No connection to mongodb"), null);
         return;
     }
 
@@ -167,8 +172,8 @@ module.exports.insertOne = function (colName, object, callback) {
         {safe:true},
         function(err, item) {
             if (err) {
-                console.error(err);
-                callback("Problem with mongodb connection: cannot insert an object", null);
+                logger.error(err);
+                callback(new Exceptions.InternalServerError("Problem with mongodb connection: cannot insert an object"), null);
             } else {
                 callback(null, object);
             }
@@ -179,7 +184,7 @@ module.exports.insertOne = function (colName, object, callback) {
 module.exports.updateOne = function (colName, id, newObject, callback) {
 
     if (! connected) {
-        callback("No connection to mongodb", null);
+        callback(new Exceptions.InternalServerError("No connection to mongodb"), null);
         return;
     }
 
@@ -187,7 +192,8 @@ module.exports.updateOne = function (colName, id, newObject, callback) {
     try {
         bsonID = new BSON.ObjectID(id);
     } catch (e) {
-        throw new Exceptions.BadRequestException("ID is not a valid ObjectID");
+        callback(new Exceptions.BadRequestException("ID is not a valid ObjectID"), null);
+        return;
     }
 
     mongodbClient.collection(colName).replaceOne(
@@ -195,8 +201,8 @@ module.exports.updateOne = function (colName, id, newObject, callback) {
         newObject,
         function(err, result) {
             if (err) {
-                console.error(err);
-                callback("Problem with mongodb connection: cannot update an object", null);
+                logger.error(err);
+                callback(new Exceptions.InternalServerError("Problem with mongodb connection: cannot update an object"), null);
             } else {
                 callback(null, result);
             }
@@ -208,14 +214,14 @@ module.exports.updateOne = function (colName, id, newObject, callback) {
 module.exports.updateOneKey = function (colName, id, key, value) {
 
     if (! connected) {
-        return "No connection to mongodb";
+        return new Exceptions.InternalServerError("No connection to mongodb");
     }
 
     var bsonID;
     try {
         bsonID = new BSON.ObjectID(id);
     } catch (e) {
-        throw new Exceptions.BadRequestException("ID is not a valid ObjectID");
+        return new Exceptions.BadRequestException("ID is not a valid ObjectID");
     }
 
     var setter = { $set : {}};
@@ -232,14 +238,14 @@ module.exports.updateOneKey = function (colName, id, key, value) {
 module.exports.deleteOneKey = function (colName, id, key) {
 
     if (! connected) {
-        return "No connection to mongodb";
+        return new Exceptions.InternalServerError("No connection to mongodb");
     }
 
     var bsonID;
     try {
         bsonID = new BSON.ObjectID(id);
     } catch (e) {
-        throw new Exceptions.BadRequestException("ID is not a valid ObjectID");
+        return new Exceptions.BadRequestException("ID is not a valid ObjectID");
     }
 
     var unsetter = { $unset : {}};
@@ -257,7 +263,7 @@ module.exports.deleteOneKey = function (colName, id, key) {
 module.exports.deleteOne = function (colName, id, callback) {
 
     if (! connected) {
-        callback("No connection to mongodb", null);
+        callback(new Exceptions.InternalServerError("No connection to mongodb"), null);
         return;
     }
 
@@ -265,23 +271,19 @@ module.exports.deleteOne = function (colName, id, callback) {
     try {
         bsonID = new BSON.ObjectID(id);
     } catch (e) {
-        throw new Exceptions.BadRequestException("ID is not a valid ObjectID");
+        callback(new Exceptions.BadRequestException("ID is not a valid ObjectID"), null);
+        return;
     }
 
     mongodbClient.collection(colName).deleteOne(
         {'_id': bsonID},
         function(err, result) {
             if (err) {
-                console.error(err);
-                callback("Problem with mongodb connection: cannot delete an object", null);
+                logger.error(err);
+                callback(new Exceptions.InternalServerError("Problem with mongodb connection: cannot delete an object"), null);
             } else {
                 callback(null, result);
             }
         }
     );
 };
-
-
-/*************************************************************************************************/
-
-// FONCTIONS D'ACCÈS À LA BASE DE DONNÉES

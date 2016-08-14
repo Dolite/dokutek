@@ -17,20 +17,8 @@ router.use(
         for (var key in req.query) { 
             req.query[key.toLowerCase()] = req.query[key];
         }
-                
-        try {
-        	next();
-    	} catch (e) {
-            if (e instanceof Exceptions.BadRequestException) {
-                res.status(400).json(e);
-            } else if (e instanceof Exceptions.NotFoundException) {
-                res.status(404).json(e);
-            } else if (e instanceof Exceptions.ConflictException) {
-                res.status(409).json(e);
-            } else {
-                res.status(500).json(e);
-            }
-        }
+    	
+        next();
     }
 )
 
