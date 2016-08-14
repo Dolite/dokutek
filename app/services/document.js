@@ -11,6 +11,7 @@ var Logger = require('log4js').getLogger("logger");
 
 
 var collectionName = "documents";
+var pageSize = 3;
 
 /************************************** UTILITAIRES **************************************/
 
@@ -81,8 +82,17 @@ module.exports.getDistinct = function (field, callback) {
     MongodbServices.distinct( collectionName, field, callback );
 }
 
-module.exports.gets = function (callback) {
-    MongodbServices.findSeveral( collectionName, 10, callback );
+module.exports.gets = function (page, callback) {
+
+    var skip = null;
+    if (page !== null && ! isNaN(parseFloat(page)) && isFinite(page)) {
+        skip = (page - 1) * pageSize;
+    }
+
+    Logger.info(page);
+    Logger.info(skip);
+
+    MongodbServices.findSeveral( collectionName, skip, pageSize, callback );
 }
 
 module.exports.create = function (rawObj, callback) {

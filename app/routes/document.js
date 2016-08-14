@@ -30,7 +30,12 @@ router.route('/')
         );
     })
     .get(function(req, res) {
+        var page = null;
+        if (req.query.page !== null && req.query.page != "no") {
+            page = req.query.page;
+        }
         DocumentServices.gets(
+            page,
             function (exception, objs) {
                 if (exception) {
                     res.status(exception.code).json(exception);

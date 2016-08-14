@@ -116,14 +116,23 @@ module.exports.findOne = function (colName, id, callback) {
     );
 };
 
-module.exports.findSeveral = function (colName, max, callback) {
+module.exports.findSeveral = function (colName, skip, max, callback) {
 
     if (! connected) {
         callback(new Exceptions.InternalServerError("No connection to mongodb"), null);
         return;
     }
 
-    mongodbClient.collection(colName).find({},{'_timestamp': true, 'name': true, '_filetype': true}).toArray(
+    // Options de vue : on ne veut pas tous les champs
+    var options = {'_timestamp': true, 'name': true, '_filetype': true};
+
+    if (skip !== null && max !== null) {
+        // Options de pagination
+        options.limit = max;
+        options.skip = skip;
+    }
+    
+    mongodbClient.collection(colName).find({}, options).toArray(
         function(err, items) {
             if (err) {
                 logger.error(err);
